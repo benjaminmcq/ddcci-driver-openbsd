@@ -36,23 +36,23 @@
 #endif
 
 struct ddc_mapping {
-        TAILQ_ENTRY(ddc_mapping)	dm_link;
+        TAILQ_ENTRY(ddc_mapping) dm_link;
         struct device		*dm_dev;		/* Parent GPU driver instance (referred to as the GPU) */
         struct i2c_adapter	*dm_adapter;	/* I2C device that initiates transfers from within the GPU (I2C master) */
-        i2c_addr_t			dm_addr;		/* Target monitor slave (I2C slave) */
-		uint8_t				*dm_raw_caps;	/* Unparsed response to a capabilities request from the monitor */
-		uint32_t			*dm_caps;		/* Parsed monitor capabilities */
-		unsigned int		dm_caps_len;	/* Length of unparsed response to capabilities request */	
+        i2c_addr_t		dm_addr;		/* Target monitor slave (I2C slave) */
+	uint8_t			*dm_raw_caps;	/* Unparsed response to a capabilities request from the monitor */
+	uint32_t		*dm_caps;		/* Parsed monitor capabilities */
+	unsigned int		dm_caps_len;	/* Length of unparsed response to capabilities request */	
 };
 
 TAILQ_HEAD(, ddc_mapping) ddcs = TAILQ_HEAD_INITIALIZER(ddcs);
 struct rwlock ddcs_lock = RWLOCK_INITIALIZER("ddclk");
 
 int		ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
-void	ddc_unregister(struct device *);
+void		ddc_unregister(struct device *);
 int		ddc_probe_device(struct device *, struct i2c_adapter *);
 unsigned char	ddc_checksum(uint8_t *, unsigned int, i2c_addr_t);
-void	ddcattach(int);
+void		ddcattach(int);
 int		ddcclose(dev_t, int, int, struct proc *);
 int		ddcioctl(dev_t, u_long, caddr_t, int, struct proc *);
 int		ddcopen(dev_t, int, int, struct proc *);
@@ -206,52 +206,53 @@ ddc_get_caps(struct device *dev, struct i2c_adapter *adapter)
 		struct i2c_msg msg;
 		uint8_t cmd[6], *buf;
 		int ret, len;
-		rw_enter_read(&ddcs_lock);
 		unsigned int offset = 0, counter = 0, resp_len, payload_len, buf_len, cap_len;
-
+		
+		rw_enter_read(&ddcs_lock);
+		
 		TAILQ_FOREACH(dm, &ddcs, dm_link) {
-				if (dm->dm_dev == dev && dm->dm_adapter == adapter)
-						break;
+			if (dm->dm_dev == dev && dm->dm_adapter == adapter)
+				break;
 		}
 
 		buf = malloc(35, M_DEVBUF, M_WAITOK | M_ZERO);
 	
 		if (dm == NULL || dm->dm_dev == NULL || dm->dm_adapter == NULL || dm->dm_addr == 0) {
     			DPRINTF("ddc_get_caps: one or more of the members in ddc_mapping was NULL!");
-            	ret = ENOENT;
-            	goto out;
-    	}
+            		ret = ENOENT;
+	            	goto out;
+    		}
 		
 		dm->dm_raw_caps = malloc(DDC_MAX_CAPS_STRING, M_DEVBUF, M_WAITOK | M_ZERO);
 
 		len = sizeof(cmd) - 1;
 	
 		do {
-				cmd[0] = DDC_HOST_ADDR_ODD;
+			cmd[0] = DDC_HOST_ADDR_ODD;
 	    		cmd[1] = DDC_PFLAG | 3;
 	    		cmd[2] = DDC_CMD_CAPS;
 	    		cmd[3] = (offset >> 8) & 0xFF;
         		cmd[4] = offset & 0xFF;
-				cmd[5] = ddc_checksum(cmd, len, DDC_MONITOR_ADDR << 1);
+			cmd[5] = ddc_checksum(cmd, len, DDC_MONITOR_ADDR << 1);
 
-				msg.addr = dm->dm_addr;
-				msg.flags = 0;
-				msg.buf = cmd;
-				msg.len = sizeof(cmd);
+			msg.addr = dm->dm_addr;
+			msg.flags = 0;
+			msg.buf = cmd;
+			msg.len = sizeof(cmd);
 
-				ret = i2c_transfer(dm->dm_adapter, &msg, 1);
+			ret = i2c_transfer(dm->dm_adapter, &msg, 1);
 
-				if (ret < 0) {
+			if (ret < 0) {
             			DPRINTF("ddc_get_caps: write failed! return value=%d\n", ret);
 	                	goto out;
         		}
 		
-				tsleep_nsec(dm, PWAIT, "ddc", MSEC_TO_NSEC(60));
+			tsleep_nsec(dm, PWAIT, "ddc", MSEC_TO_NSEC(60));
 
-				buf_len = 35;
+			buf_len = 35;
 	    		msg.flags = I2C_M_RD;
         		msg.buf = buf;
-				msg.len = buf_len;
+			msg.len = buf_len;
 
         		ret = i2c_transfer(dm->dm_adapter, &msg, 1);
 
@@ -264,13 +265,13 @@ ddc_get_caps(struct device *dev, struct i2c_adapter *adapter)
         	    		DPRINTF("ddc_get_caps: invalid response! buf[0]=0x%x\n", buf[0]);
                 		ret = EIO;
 	            		goto out;
-				} 		
+			} 		
 
-				if (!(buf[1] & DDC_PFLAG)) {
-						DPRINTF("ddc_get_caps: length byte missing PFLAG! buf[1]=0x%x\n", buf[1]);
-						ret = EIO;
-						goto out;
-				}
+			if (!(buf[1] & DDC_PFLAG)) {
+				DPRINTF("ddc_get_caps: length byte missing PFLAG! buf[1]=0x%x\n", buf[1]);
+				ret = EIO;
+				goto out;
+			}
 
         		payload_len = buf[1] & 0x7F;
         		resp_len = 2 + payload_len + 1;
@@ -307,7 +308,7 @@ ddc_get_caps(struct device *dev, struct i2c_adapter *adapter)
                 		offset += n;
        			}
 		
-				counter++;
+			counter++;
 		} while (cap_len > 0 && offset < DDC_MAX_CAPS_STRING && counter < DDC_MAX_CAP_CHUNKS);
 
 		dm->dm_caps_len = offset;
@@ -350,6 +351,7 @@ ddcopen(dev_t dev, int flags, int mode, struct proc *p)
 {
 		if (minor(dev) != 0)
     			return (ENXIO);
+			
 		return (0);
 }
 
@@ -362,20 +364,22 @@ ddcclose(dev_t dev, int flags, int mode, struct proc *p)
 int
 ddcioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 {
-		struct ddc_probe_args *dpa = (struct ddc_probe_args *)data;
+	struct ddc_probe_args *dpa = (struct ddc_probe_args *)data;
         struct ddc_mapping *dm;
 
         switch (cmd) {
         case DDCIOCPROBE:
                 dpa->dpa_name[sizeof dpa->dpa_name - 1] = '\0';
+		
                 rw_enter_read(&ddcs_lock);
+		
                 dm = NULL;
 			
                 TAILQ_FOREACH(dm, &ddcs, dm_link) {
                         DPRINTF("ddc_ioctl debug: entry in list is '%s'\n", dm->dm_dev->dv_xname);
                 }
 
-				TAILQ_FOREACH(dm, &ddcs, dm_link) {
+		TAILQ_FOREACH(dm, &ddcs, dm_link) {
                         if (strcmp(dm->dm_dev->dv_xname, dpa->dpa_name) == 0)
                                 break;
                 }
@@ -384,40 +388,41 @@ ddcioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 			
                 if (dm == NULL)
                         return (ENOENT);
+			
                 return ddc_probe_device(dm->dm_dev, dm->dm_adapter);
 
-case DDCIOCREADCAPS: {
+	case DDCIOCREADCAPS: {
 		int ret;
-        dpa->dpa_name[sizeof dpa->dpa_name - 1] = '\0';
+        	dpa->dpa_name[sizeof dpa->dpa_name - 1] = '\0';
 	
-        rw_enter_read(&ddcs_lock);
+	        rw_enter_read(&ddcs_lock);
 	
-        dm = NULL;
+        	dm = NULL;
 	
-        TAILQ_FOREACH(dm, &ddcs, dm_link) {
-                if (strcmp(dm->dm_dev->dv_xname, dpa->dpa_name) == 0)
-                        break;
+	        TAILQ_FOREACH(dm, &ddcs, dm_link) {
+        	        if (strcmp(dm->dm_dev->dv_xname, dpa->dpa_name) == 0)
+        		        break;
 		}
 	
-        rw_exit_read(&ddcs_lock);
-
-        if (dm == NULL)
-                return (ENOENT);
-
-        ret = ddc_get_caps(dm->dm_dev, dm->dm_adapter);
+        	rw_exit_read(&ddcs_lock);
 	
-        if (ret != 0)
-                return (ret);
+	        if (dm == NULL)
+                	return (ENOENT);
+	
+        	ret = ddc_get_caps(dm->dm_dev, dm->dm_adapter);
+	
+	        if (ret != 0)
+        	        return (ret);
 
-        {
+        	{
         		unsigned int n = MIN(dm->dm_caps_len, dpa->dpa_caps_buf_len);
-                int cret = copyout(dm->dm_raw_caps, dpa->dpa_caps_buf, n);
+                	int cret = copyout(dm->dm_raw_caps, dpa->dpa_caps_buf, n);
 		
-                if (cret != 0)
-                        return (cret);
+	                if (cret != 0)
+        	                return (cret);
 			
-                dpa->dpa_caps_len = n;
-        }
+                	dpa->dpa_caps_len = n;
+        	}
 	
         return (0);
 }
