@@ -20,14 +20,13 @@
 #include <sys/ioctl.h>
 
 struct ddc_probe_args {
-        char		dpa_name[16];
-        uint8_t		*dpa_caps_buf;
-        unsigned int	dpa_caps_buf_len;
-        unsigned int	dpa_caps_len;
+	char		 dpa_name[16];
+	uint8_t		*dpa_caps_buf;
+	unsigned int	 dpa_caps_buf_len;
+	unsigned int	 dpa_caps_len;
 };
 
 #define DDCIOCPROBE	_IOW('D', 0, struct ddc_probe_args)
 #define DDCIOCREADCAPS	_IOWR('D', 1, struct ddc_probe_args)
 
 #endif /* _SYS_DEV_DDC_IOCTL_H_ */
-

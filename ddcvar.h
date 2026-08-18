@@ -21,10 +21,10 @@
 #include <dev/i2c/i2cvar.h>
 #include <linux/i2c.h>
 
-int  ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
-void  ddc_unregister(struct device *);
-int  ddc_probe_device(struct device *, struct i2c_adapter *);
-int  ddc_get_caps(struct device *, struct i2c_adapter *);
+int ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
+void ddc_unregister(struct device *);
+int ddc_probe_device(struct device *, struct i2c_adapter *);
+int ddc_get_caps(struct device *, struct i2c_adapter *);
 
 #define DDC_CMD_CAPS            0xF3
 #define DDC_HOST_ADDR_ODD        0x51
