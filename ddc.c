@@ -51,6 +51,7 @@ struct rwlock ddcs_lock = RWLOCK_INITIALIZER("ddclk");
 int		ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
 void		ddc_unregister(struct device *);
 int		ddc_probe_device(struct device *, struct i2c_adapter *);
+int		ddc_get_caps(struct device *, struct i2c_adapter *);
 unsigned char	ddc_checksum(uint8_t *, unsigned int, i2c_addr_t);
 void		ddcattach(int);
 int		ddcclose(dev_t, int, int, struct proc *);
@@ -221,7 +222,7 @@ ddc_get_caps(struct device *dev, struct i2c_adapter *adapter)
 			break;
 	}
 
-	buf = malloc(35, M_DEVBUF, M_WAITOK | M_ZERO);
+	buf = malloc(40, M_DEVBUF, M_WAITOK | M_ZERO);
 
 	if (dm == NULL || dm->dm_dev == NULL || dm->dm_adapter == NULL ||
 	    dm->dm_addr == 0) {
@@ -259,7 +260,7 @@ ddc_get_caps(struct device *dev, struct i2c_adapter *adapter)
 
 		tsleep_nsec(dm, PWAIT, "ddc", MSEC_TO_NSEC(60));
 
-		buf_len = 35;
+		buf_len = 40;
 		msg.flags = I2C_M_RD;
 		msg.buf = buf;
 		msg.len = buf_len;
@@ -339,7 +340,7 @@ out:
 	rw_exit_read(&ddcs_lock);
 
 	if (buf != NULL)
-		free(buf, M_DEVBUF, 35);
+		free(buf, M_DEVBUF, 40);
 
 	return (ret);
 }
