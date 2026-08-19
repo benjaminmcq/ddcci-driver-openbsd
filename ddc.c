@@ -40,8 +40,7 @@ struct ddc_mapping {
 	struct device		*dm_dev;		/* Parent GPU driver instance (referred to as the GPU) */
 	struct i2c_adapter	*dm_adapter;	/* I2C device that initiates transfers from within the GPU (I2C master) */
 	i2c_addr_t		 dm_addr;		/* Target monitor slave (I2C slave) */
-	uint8_t			*dm_raw_caps;	/* Unparsed response to a capabilities request from the monitor */
-	uint32_t		*dm_caps;		/* Parsed monitor capabilities */
+	uint8_t			*dm_caps;	/* Unparsed response to a capabilities request from the monitor */
 	unsigned int		 dm_caps_len;	/* Length of unparsed response to capabilities request */
 };
 
@@ -232,7 +231,7 @@ ddc_get_caps(struct device *dev, struct i2c_adapter *adapter)
 		goto out;
 	}
 
-	dm->dm_raw_caps = malloc(DDC_MAX_CAPS_STRING, M_DEVBUF,
+	dm->dm_caps = malloc(DDC_MAX_CAPS_STRING, M_DEVBUF,
 	    M_WAITOK | M_ZERO);
 
 	len = sizeof(cmd) - 1;
@@ -323,7 +322,7 @@ ddc_get_caps(struct device *dev, struct i2c_adapter *adapter)
 		if (cap_len > 0) {
 			unsigned int n = MIN(cap_len,
 			    DDC_MAX_CAPS_STRING - offset);
-			memcpy(dm->dm_raw_caps + offset, buf + 5, n);
+			memcpy(dm->dm_caps + offset, buf + 5, n);
 			offset += n;
 		}
 
@@ -334,7 +333,7 @@ ddc_get_caps(struct device *dev, struct i2c_adapter *adapter)
 	dm->dm_caps_len = offset;
 
 	DPRINTF("ddc_get_caps: raw caps string: %.*s\n", (int)dm->dm_caps_len,
-	    (char *)dm->dm_raw_caps);
+	    (char *)dm->dm_caps);
 	ret = 0;
 out:
 	rw_exit_read(&ddcs_lock);
@@ -439,7 +438,7 @@ ddcioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 		{
 			unsigned int n = MIN(dm->dm_caps_len,
 			    dpa->dpa_caps_buf_len);
-			int cret = copyout(dm->dm_raw_caps, dpa->dpa_caps_buf,
+			int cret = copyout(dm->dm_caps, dpa->dpa_caps_buf,
 			    n);
 
 			if (cret != 0)
