@@ -40,7 +40,7 @@ struct ddc_mapping {
 	struct device		*dm_dev;		/* Parent GPU driver instance (referred to as the GPU) */
 	struct i2c_adapter	*dm_adapter;	/* I2C device that initiates transfers from within the GPU (I2C master) */
 	i2c_addr_t		 dm_addr;		/* Target monitor slave (I2C slave) */
-	uint8_t			*dm_caps;	/* Unparsed response to a capabilities request from the monitor */
+	uint8_t			*dm_caps;	/* Response to a capabilities request from the monitor */
 	unsigned int		 dm_caps_len;	/* Length of unparsed response to capabilities request */
 };
 
