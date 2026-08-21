@@ -18,15 +18,14 @@
 #define _SYS_DEV_DDC_IOCTL_H_
 
 #include <sys/ioctl.h>
+#include <sys/types.h>
 
-struct ddc_probe_args {
-	char		 dpa_name[16];
-	uint8_t		*dpa_caps_buf;
-	unsigned int	 dpa_caps_buf_len;
-	unsigned int	 dpa_caps_len;
+struct ddc_vcp_args {
+	uint16_t	dva_value;
 };
 
-#define DDCIOCPROBE	_IOW('D', 0, struct ddc_probe_args)
-#define DDCIOCREADCAPS	_IOWR('D', 1, struct ddc_probe_args)
+#define DDCIOCPROBE           _IO('D', 0)
+#define DDCIOCGETBRIGHTNESS   _IOR('D', 1, struct ddc_vcp_args)
+#define DDCIOCSETBRIGHTNESS   _IOW('D', 2, struct ddc_vcp_args)
 
 #endif /* _SYS_DEV_DDC_IOCTL_H_ */

@@ -25,15 +25,22 @@ int ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
 void ddc_unregister(struct device *);
 int ddc_probe_device(struct device *, struct i2c_adapter *);
 int ddc_get_caps(struct device *, struct i2c_adapter *);
+int ddc_get_vcp(struct device *, struct i2c_adapter *, uint8_t, uint16_t *);
+int ddc_set_vcp(struct device *,  struct i2c_adapter *, uint8_t, uint16_t);
 
 #define DDC_CMD_CAPS            0xF3
+#define DDC_CMD_GETVCP		0x01
+#define DDC_CMD_SETVCP		0x03
+
 #define DDC_HOST_ADDR_ODD        0x51
 #define DDC_HOST_ADDR_EVEN      0x50
 #define DDC_DEFAULT_DEVICE_ADDR  0x6E
 #define DDC_HOST_REPLY_CAPS      0xE3
 #define DDC_MONITOR_ADDR         0x37
 #define DDC_PFLAG                0x80
-#define DDC_MAX_CAPS_STRING      16384
-#define DDC_MAX_CAP_CHUNKS      ((DDC_MAX_CAPS_STRING / 16) + 8)
+
+#define DDC_VCP_UNKNOWN		0
+#define DDC_VCP_SUPPORTED	1
+#define DDC_VCP_UNSUPPORTED	2
 
 #endif /* _SYS_DEV_DDCVAR_H_ */
