@@ -36,7 +36,7 @@
 #endif
 
 struct ddc_mapping {
-        int                     dm_index;
+	int			 dm_index;
 	TAILQ_ENTRY(ddc_mapping) dm_link;
 	struct device		*dm_dev;		/* Parent GPU driver instance (referred to as the GPU) */
 	struct i2c_adapter	*dm_adapter;	/* I2C device that initiates transfers from within the GPU (I2C master) */
@@ -51,8 +51,10 @@ struct rwlock ddcs_lock = RWLOCK_INITIALIZER("ddclk");
 int		ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
 void		ddc_unregister(struct device *);
 int		ddc_probe_device(struct device *, struct i2c_adapter *);
-int		ddc_get_vcp(struct device *, struct i2c_adapter *, uint8_t, uint16_t *);
-int		ddc_set_vcp(struct device *, struct i2c_adapter *, uint8_t, uint16_t);
+int		ddc_get_vcp(struct device *, struct i2c_adapter *, uint8_t,
+    uint16_t *);
+int		ddc_set_vcp(struct device *, struct i2c_adapter *, uint8_t,
+    uint16_t);
 unsigned char	ddc_checksum(uint8_t *, unsigned int, i2c_addr_t);
 void		ddcattach(int);
 int		ddcclose(dev_t, int, int, struct proc *);
@@ -71,7 +73,7 @@ ddc_register(struct device *dev, struct i2c_adapter *adapter, i2c_addr_t addr)
 	dm = malloc(sizeof(*dm), M_DEVBUF, M_WAITOK);
 
 	if (dm == NULL)
-		return (ENOMEM);
+		return ENOMEM;
 
 	dm->dm_dev = dev;
 	dm->dm_adapter = adapter;
@@ -82,7 +84,7 @@ ddc_register(struct device *dev, struct i2c_adapter *adapter, i2c_addr_t addr)
 	TAILQ_INSERT_TAIL(&ddcs, dm, dm_link);
 	rw_exit_write(&ddcs_lock);
 
-	return (0);
+	return 0;
 }
 
 /*
@@ -120,7 +122,7 @@ ddc_probe_device(struct device *dev, struct i2c_adapter *adapter)
 	struct ddc_mapping *dm;
 	struct i2c_msg msg;
 	uint8_t data[32], cmd[6];
-	int ret, len;
+	int len, ret;
 	rw_enter_read(&ddcs_lock);
 
 	TAILQ_FOREACH(dm, &ddcs, dm_link) {
@@ -197,33 +199,34 @@ ddc_probe_device(struct device *dev, struct i2c_adapter *adapter)
 	ret = 0;
 out:
 	rw_exit_read(&ddcs_lock);
-	
-	return (ret);
+
+	return ret;
 }
 
 int
-ddc_get_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code, uint16_t *value)
+ddc_get_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code,
+    uint16_t *value)
 {
 	struct ddc_mapping *dm;
 	struct i2c_msg msg;
 	uint8_t cmd[5], data[32];
-	int ret, len;
-	
+	int len, ret;
+
 	rw_enter_read(&ddcs_lock);
 
-        TAILQ_FOREACH(dm, &ddcs, dm_link) {
-                if (dm->dm_dev == dev && dm->dm_adapter == adapter)
-                        break;
-        }
+	TAILQ_FOREACH(dm, &ddcs, dm_link) {
+		if (dm->dm_dev == dev && dm->dm_adapter == adapter)
+			break;
+	}
 
-        if (dm == NULL || dm->dm_dev == NULL || dm->dm_adapter == NULL ||
-            dm->dm_addr == 0) {
-                DPRINTF(
-                    "ddc_get_vcp: one or more of the members in ddc_mapping was NULL!");
-                ret = ENOENT;
-                goto out;
-        }
-	
+	if (dm == NULL || dm->dm_dev == NULL || dm->dm_adapter == NULL ||
+	    dm->dm_addr == 0) {
+		DPRINTF(
+		    "ddc_get_vcp: one or more of the members in ddc_mapping was NULL!");
+		ret = ENOENT;
+		goto out;
+	}
+
 	len = sizeof(cmd) - 1;
 
 	cmd[0] = DDC_HOST_ADDR_ODD;
@@ -267,19 +270,18 @@ ddc_get_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code, u
 	}
 
 	if (data[2] != 0x02) {
-                DPRINTF("ddc_get_vcp: invalid response! data[2]=0x%x\n",
-                    data[2]);
-                ret = EIO;                                                                                                                                                                                          
+		DPRINTF("ddc_get_vcp: invalid response! data[2]=0x%x\n",
+		    data[2]);
+		ret = EIO;
 		goto out;
 	}
-	
+
 	if (data[3] != 0x00) {
 		DPRINTF("ddc_get_vcp: invalid response! data[3]=0x%x\n",
 		    data[3]);
 		ret = EIO;
 		goto out;
 	}
-
 
 	if (data[4] != vcp_code) {
 		DPRINTF("ddc_get_vcp: invalid response! data[4]=0x%x\n",
@@ -291,79 +293,79 @@ ddc_get_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code, u
 	len = 2 + 8 + 1;
 
 	if (len > sizeof(data)) {
-        	DPRINTF("ddc_get_vcp: response too long! len=%d\n", len);
-	        ret = EIO;
-        	goto out;
+		DPRINTF("ddc_get_vcp: response too long! len=%d\n", len);
+		ret = EIO;
+		goto out;
 	}
 
 	if (ddc_checksum(data, len, DDC_HOST_ADDR_EVEN) != 0) {
-        	DPRINTF("ddc_get_vcp: checksum failed!\n");
-	        ret = EIO;
-        	goto out;
+		DPRINTF("ddc_get_vcp: checksum failed!\n");
+		ret = EIO;
+		goto out;
 	}
 
-        if (value != NULL)
-                *value = ((uint16_t)data[8] << 8) | data[9];	
+	if (value != NULL)
+		*value = ((uint16_t)data[8] << 8) | data[9];
 
 	ret = 0;
 out:
-        rw_exit_read(&ddcs_lock);
+	rw_exit_read(&ddcs_lock);
 
-        return (ret);
+	return ret;
 }
 
 int
-ddc_set_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code, uint16_t value)
+ddc_set_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code,
+    uint16_t value)
 {
-        struct ddc_mapping *dm;
-        struct i2c_msg msg;
-        uint8_t cmd[7]; 
-        int ret, len;
+	struct ddc_mapping *dm;
+	struct i2c_msg msg;
+	uint8_t cmd[7];
+	int len, ret;
 
-        rw_enter_read(&ddcs_lock);
+	rw_enter_read(&ddcs_lock);
 
-        TAILQ_FOREACH(dm, &ddcs, dm_link) {
-                if (dm->dm_dev == dev && dm->dm_adapter == adapter)
-                        break;
-        }
+	TAILQ_FOREACH(dm, &ddcs, dm_link) {
+		if (dm->dm_dev == dev && dm->dm_adapter == adapter)
+			break;
+	}
 
-        if (dm == NULL || dm->dm_dev == NULL || dm->dm_adapter == NULL ||
-            dm->dm_addr == 0) {
-                DPRINTF(
-                    "ddc_set_vcp: one or more of the members in ddc_mapping was NULL!");
-                ret = ENOENT;
-                goto out;
-        }
+	if (dm == NULL || dm->dm_dev == NULL || dm->dm_adapter == NULL ||
+	    dm->dm_addr == 0) {
+		DPRINTF(
+		    "ddc_set_vcp: one or more of the members in ddc_mapping was NULL!");
+		ret = ENOENT;
+		goto out;
+	}
 
-        len = sizeof(cmd) - 1;
+	len = sizeof(cmd) - 1;
 
-        cmd[0] = DDC_HOST_ADDR_ODD;
-        cmd[1] = DDC_PFLAG | 4;
-        cmd[2] = DDC_CMD_SETVCP;
-        cmd[3] = vcp_code;
+	cmd[0] = DDC_HOST_ADDR_ODD;
+	cmd[1] = DDC_PFLAG | 4;
+	cmd[2] = DDC_CMD_SETVCP;
+	cmd[3] = vcp_code;
 	cmd[4] = (value >> 8) & 0xFF;
-        cmd[5] = value & 0xFF;
+	cmd[5] = value & 0xFF;
 	cmd[6] = ddc_checksum(cmd, len, DDC_MONITOR_ADDR << 1);
 
-        msg.addr = dm->dm_addr;
-        msg.flags = 0;
-        msg.buf = cmd;
-        msg.len = sizeof(cmd);
+	msg.addr = dm->dm_addr;
+	msg.flags = 0;
+	msg.buf = cmd;
+	msg.len = sizeof(cmd);
 
-        ret = i2c_transfer(dm->dm_adapter, &msg, 1);
+	ret = i2c_transfer(dm->dm_adapter, &msg, 1);
 
-        if (ret < 0) {
-                DPRINTF("ddc_set_vcp: write failed! return value=%d\n",
-                    ret);
-                goto out;
-        }
-
+	if (ret < 0) {
+		DPRINTF("ddc_set_vcp: write failed! return value=%d\n",
+		    ret);
+		goto out;
+	}
 
 	ret = 0;
 out:
-        rw_exit_read(&ddcs_lock);
+	rw_exit_read(&ddcs_lock);
 
-        return (ret);
+	return ret;
 }
 
 /*
@@ -375,12 +377,12 @@ uint8_t
 ddc_checksum(uint8_t *cmd, unsigned int len, i2c_addr_t addr)
 {
 	unsigned int i, sum;
-	sum = (unsigned char)(addr); 
+	sum = (unsigned char)(addr);
 
 	for (i = 0; i < len; i++)
 		sum ^= cmd[i];
 
-	return ((uint8_t)sum);
+	return (uint8_t)sum;
 }
 
 void
@@ -392,7 +394,7 @@ int
 ddcopen(dev_t dev, int flags, int mode, struct proc *p)
 {
 	struct ddc_mapping *dm;
-	
+
 	rw_enter_write(&ddcs_lock);
 
 	TAILQ_FOREACH(dm, &ddcs, dm_link) {
@@ -402,18 +404,18 @@ ddcopen(dev_t dev, int flags, int mode, struct proc *p)
 
 	if (dm == NULL) {
 		rw_exit_write(&ddcs_lock);
-		return (ENXIO);
+		return ENXIO;
 	}
 
 	rw_exit_write(&ddcs_lock);
-	
-	return (0);
+
+	return 0;
 }
 
 int
 ddcclose(dev_t dev, int flags, int mode, struct proc *p)
 {
-	return (0);
+	return 0;
 }
 
 int
@@ -436,45 +438,47 @@ ddcioctl(dev_t dev, u_long cmd, caddr_t data, int flag, struct proc *p)
 		rw_exit_read(&ddcs_lock);
 
 		if (dm == NULL)
-			return (ENOENT);
+			return ENOENT;
 
 		return ddc_probe_device(dm->dm_dev, dm->dm_adapter);
 
 	case DDCIOCGETBRIGHTNESS:
 		rw_enter_read(&ddcs_lock);
 
-                dm = NULL;
+		dm = NULL;
 
-                TAILQ_FOREACH(dm, &ddcs, dm_link) {
-                        if (minor(dev) == dm->dm_index)
-                                break;
-                }
+		TAILQ_FOREACH(dm, &ddcs, dm_link) {
+			if (minor(dev) == dm->dm_index)
+				break;
+		}
 
-                rw_exit_read(&ddcs_lock);
+		rw_exit_read(&ddcs_lock);
 
-                if (dm == NULL)
-                        return (ENOENT);
+		if (dm == NULL)
+			return ENOENT;
 
-                return ddc_get_vcp(dm->dm_dev, dm->dm_adapter, 0x10, &dva->dva_value);
-		
+		return ddc_get_vcp(dm->dm_dev, dm->dm_adapter, 0x10,
+		    &dva->dva_value);
+
 	case DDCIOCSETBRIGHTNESS:
-                rw_enter_read(&ddcs_lock);
+		rw_enter_read(&ddcs_lock);
 
-                dm = NULL;
+		dm = NULL;
 
-                TAILQ_FOREACH(dm, &ddcs, dm_link) {
-                        if (minor(dev) == dm->dm_index)
-                                break;
-                }
+		TAILQ_FOREACH(dm, &ddcs, dm_link) {
+			if (minor(dev) == dm->dm_index)
+				break;
+		}
 
-                rw_exit_read(&ddcs_lock);
+		rw_exit_read(&ddcs_lock);
 
-                if (dm == NULL)
-                        return (ENOENT);
+		if (dm == NULL)
+			return ENOENT;
 
-                return ddc_set_vcp(dm->dm_dev, dm->dm_adapter, 0x10, dva->dva_value);
+		return ddc_set_vcp(dm->dm_dev, dm->dm_adapter, 0x10,
+		    dva->dva_value);
 
 	default:
-		return (ENOTTY);
+		return ENOTTY;
 	}
 }

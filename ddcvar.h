@@ -26,7 +26,7 @@ void ddc_unregister(struct device *);
 int ddc_probe_device(struct device *, struct i2c_adapter *);
 int ddc_get_caps(struct device *, struct i2c_adapter *);
 int ddc_get_vcp(struct device *, struct i2c_adapter *, uint8_t, uint16_t *);
-int ddc_set_vcp(struct device *,  struct i2c_adapter *, uint8_t, uint16_t);
+int ddc_set_vcp(struct device *, struct i2c_adapter *, uint8_t, uint16_t);
 
 #define DDC_CMD_CAPS            0xF3
 #define DDC_CMD_GETVCP		0x01
