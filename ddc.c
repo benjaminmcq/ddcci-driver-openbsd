@@ -203,6 +203,10 @@ out:
 	return ret;
 }
 
+/*
+ * Send a VCP GET feature request.  On success, write the monitor's reported
+ * value into *value.
+ */
 int
 ddc_get_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code,
     uint16_t *value)
@@ -314,6 +318,11 @@ out:
 	return ret;
 }
 
+/* 
+ * Send a SET VCP feature request.  Success here only means the write reached
+ * the bus, not necessarily the monitor changed something.
+ * Follow up with ddc_get_vcp to verify.
+ */
 int
 ddc_set_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code,
     uint16_t value)
