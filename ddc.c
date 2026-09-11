@@ -27,8 +27,6 @@
 #include <dev/i2c/ddcvar.h>
 #include <dev/i2c/ddc_ioctl.h>
 
-#define DDC_DEBUG
-
 #ifdef DDC_DEBUG
 #define	DPRINTF(x...)		printf(x)
 #else
