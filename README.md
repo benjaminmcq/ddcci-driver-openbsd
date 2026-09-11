@@ -1,16 +1,13 @@
-NOTICE: This driver is still WIP and isn't in the OpenBSD tree yet.
+this driver implements backlight control for external monitors on OpenBSD.
 
-PRs are accepted as well as feedback
+it is explicitly not in the OpenBSD tree yet in any way.
 
-This driver is ported from here: https://gitlab.com/ddcci-driver-linux/ddcci-driver-linux
+the driver is actually very odd. it's not a character device because it doesn't take any input and function like something similar to /dev/ddcci.
+it's a pseudo device, yet it does i2c commands.
+it's not an i2c device, though i would propose it to the directory sys/dev/i2c on the tree.
 
-I plan to get this into the source tree when it's finished likely under the directory sys/dev/i2c as well as a utility in ports to control it.
+the goal is to be able to control it from wsconsctl similar to how abl(4) is architected.
 
-The planned architecture in question:
-don't provide generic ioctl access from userland straight to the connector or anything, really.
-this driver's purpose is to open a handle at /dev/ddc* and accepts commands controlling the monitor.
+if you'd like to compile it for yourself, i'd suggest looking at documentation, which i won't link here.
 
-compilation instructions not given
-
-NOTE FOR DEV BRANCH:
-THIS BRANCH IS STRICTLY UNTESTED
+thank you
