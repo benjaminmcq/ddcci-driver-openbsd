@@ -23,7 +23,6 @@
 
 int ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
 void ddc_unregister(struct device *);
-int ddc_probe_device(struct device *, struct i2c_adapter *);
 int ddc_get_caps(struct device *, struct i2c_adapter *);
 int ddc_get_vcp(struct device *, struct i2c_adapter *, uint8_t, uint16_t *);
 int ddc_set_vcp(struct device *, struct i2c_adapter *, uint8_t, uint16_t);
