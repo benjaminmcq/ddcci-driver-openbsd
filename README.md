@@ -11,3 +11,5 @@ the goal is to be able to control it from wsconsctl similar to how abl(4) is arc
 if you'd like to compile it for yourself, i'd suggest looking at documentation, which i won't link here.
 
 thank you
+
+NOTE: i don't test commits before committing on this branch.
