@@ -100,7 +100,7 @@ ddc_unregister(struct device *dev)
  */
 int
 ddc_get_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code,
-    uint16_t *value)
+    uint16_t *value, uint16_t *max_value)
 {
 	struct ddc_mapping *dm;
 	struct i2c_msg msg;
@@ -201,6 +201,9 @@ ddc_get_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code,
 
 	if (value != NULL)
 		*value = ((uint16_t)data[8] << 8) | data[9];
+	
+ 	if (max_value != NULL)
+		*max_value = ((uint16_t)data[6] << 8) | data[7];
 
 	ret = 0;
 out:
