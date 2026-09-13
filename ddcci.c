@@ -47,10 +47,10 @@ int		ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
 void		ddc_unregister(struct device *);
 int		ddc_get_vcp(struct device *, struct i2c_adapter *, uint8_t,
     uint16_t *, uint16_t *);
-int		ddc_get_param(struct wsdisplay_param *);
-int		ddc_set_vcp(struct device *, struct i2c_adapter *, uint8_t,
+int 		ddc_set_vcp(struct device *, struct i2c_adapter *, uint8_t,
     uint16_t);
 int		ddc_get_param(struct wsdisplay_param *);
+int		ddc_set_param(struct wsdisplay_param *);
 unsigned char	ddc_checksum(uint8_t *, unsigned int, i2c_addr_t);
 
 /*
@@ -346,7 +346,7 @@ ddc_set_param(struct wsdisplay_param *dp)
  * Compute the DDC/CI checksum for the given command payload,
  * starting from a value derived from the monitor's bus address
  * Returns the checksum.
-p */
+ */
 uint8_t
 ddc_checksum(uint8_t *cmd, unsigned int len, i2c_addr_t addr)
 {
