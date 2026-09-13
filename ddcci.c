@@ -34,7 +34,7 @@
 #endif
 
 struct ddc_mapping {
-    TAILQ_ENTRY(ddc_mapping) dm_link;
+	TAILQ_ENTRY(ddc_mapping) dm_link;
 	struct device		*dm_dev;		/* Parent GPU driver instance (referred to as the GPU) */
 	struct i2c_adapter	*dm_adapter;	/* I2C device that initiates transfers from within the GPU (I2C master) */
 	i2c_addr_t		 dm_addr;		/* Target monitor slave (I2C slave) */
@@ -46,9 +46,11 @@ struct rwlock ddcs_lock = RWLOCK_INITIALIZER("ddclk");
 int		ddc_register(struct device *, struct i2c_adapter *, i2c_addr_t);
 void		ddc_unregister(struct device *);
 int		ddc_get_vcp(struct device *, struct i2c_adapter *, uint8_t,
-    uint16_t *);
+    uint16_t *, uint16_t *);
+int		ddc_get_param(struct wsdisplay_param *);
 int		ddc_set_vcp(struct device *, struct i2c_adapter *, uint8_t,
     uint16_t);
+int		ddc_get_param(struct wsdisplay_param *);
 unsigned char	ddc_checksum(uint8_t *, unsigned int, i2c_addr_t);
 
 /*
@@ -203,8 +205,8 @@ ddc_get_vcp(struct device *dev, struct i2c_adapter *adapter, uint8_t vcp_code,
 
 	if (value != NULL)
 		*value = ((uint16_t)data[8] << 8) | data[9];
-	
- 	if (max_value != NULL)
+
+	if (max_value != NULL)
 		*max_value = ((uint16_t)data[6] << 8) | data[7];
 
 	ret = 0;
@@ -214,7 +216,7 @@ out:
 	return ret;
 }
 
-/* 
+/*
  * Send a SET VCP feature request.  Success here only means the write reached
  * the bus, not necessarily the monitor changed something.
  * Follow up with ddc_get_vcp to verify.
@@ -277,29 +279,28 @@ int
 ddc_get_param(struct wsdisplay_param *dp)
 {
 	struct ddc_mapping *dm;
-	uint16_t max_value, value, 
+	uint16_t max_value, value;
 	int ret;
 
 	rw_enter_read(&ddcs_lock);
-    dm = TAILQ_FIRST(&ddcs);
-    rw_exit_read(&ddcs_lock);
+	dm = TAILQ_FIRST(&ddcs);
+	rw_exit_read(&ddcs_lock);
 
 	if (dm == NULL)
-        return -1;
-	
+		return -1;
+
 	switch (dp->param) {
 	case WSDISPLAYIO_PARAM_BRIGHTNESS:
-		
 		ret = ddc_get_vcp(dm->dm_dev, dm->dm_adapter, 0x10,
-        	&value, &max_value);
-		
-        if (ret != 0)
-        	return -1;
-		
+		    &value, &max_value);
+
+		if (ret != 0)
+			return -1;
+
 		dp->min = 0;
 		dp->max = max_value;
 		dp->curval = value;
-		
+
 		return 0;
 	default:
 		return -1;
@@ -310,29 +311,31 @@ int
 ddc_set_param(struct wsdisplay_param *dp)
 {
 	struct ddc_mapping *dm;
-	uint16_t value, 
+	uint16_t value;
 	int ret;
 
 	rw_enter_read(&ddcs_lock);
-    dm = TAILQ_FIRST(&ddcs);
-    rw_exit_read(&ddcs_lock);
+	dm = TAILQ_FIRST(&ddcs);
+	rw_exit_read(&ddcs_lock);
 
 	if (dm == NULL)
-        return -1;
-	
+		return -1;
+
 	switch (dp->param) {
 	case WSDISPLAYIO_PARAM_BRIGHTNESS:
 		if (dp->curval < 0)
 			dp->curval = 0;
 		if (dp->curval > dp->max)
 			dp->curval = dp->max;
-		
-		ret = ddc_set_vcp(dm->dm_dev, dm->adapter, 0x10,
-			value);
+
+		value = (uint16_t)dp->curval;
+
+		ret = ddc_set_vcp(dm->dm_dev, dm->dm_adapter, 0x10,
+		    value);
 
 		if (ret != 0)
 			return -1;
-		
+
 		return 0;
 	default:
 		return -1;
@@ -343,7 +346,7 @@ ddc_set_param(struct wsdisplay_param *dp)
  * Compute the DDC/CI checksum for the given command payload,
  * starting from a value derived from the monitor's bus address
  * Returns the checksum.
- */
+p */
 uint8_t
 ddc_checksum(uint8_t *cmd, unsigned int len, i2c_addr_t addr)
 {
